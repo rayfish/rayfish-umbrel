@@ -1,0 +1,26 @@
+# Modeled on the official Tailscale Umbrel app: one host-network service that
+# owns the TUN device, with the web UI on a fixed host port (no app_proxy).
+version: "3.7"
+
+services:
+  web:
+    # Host networking plus /dev/net/tun lets the daemon create the host TUN
+    # interface and routes, so mesh peers can reach every service on the
+    # Umbrel and the Umbrel can reach mesh peers.
+    network_mode: "host"
+    # Placeholder: replace with the published image, pinned by digest, e.g.
+    # ghcr.io/rayfish/rayfish-umbrel:<version>@sha256:<digest>
+    image: ghcr.io/rayfish/rayfish-umbrel:0.1.0
+    restart: on-failure
+    stop_grace_period: 1m
+    # Required for the daemon to manage the host TUN interface and routes.
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      # /etc/rayfish holds identity, settings.toml, and per-network config;
+      # it must survive restarts and app updates.
+      - ${APP_DATA_DIR}/data:/etc/rayfish
+      - ${APP_DATA_DIR}/logs:/var/log/rayfish

@@ -1,0 +1,42 @@
+manifestVersion: 1
+id: rayfish-vpn
+name: Rayfish
+tagline: Your machines, on one private network, anywhere
+icon: http://umbrel.local:8480/icon.png
+category: networking
+version: "0.1.0"
+port: 8480
+description: >-
+  Rayfish is a peer-to-peer mesh VPN that puts your Umbrel, laptop, phone, and
+  your friends' machines on one private network, even when they are scattered
+  behind different NATs.
+
+
+  There is nothing to host and nothing to sign up for. No control server, no
+  account: peers find each other through a DHT and connect directly, with
+  end-to-end encryption and NAT hole-punching from iroh. Create a network on
+  your Umbrel, hand out an invite code, and reach every peer by name
+  (alice.mynet.ray) or by its stable virtual IP.
+
+
+  This app runs the rayfish daemon with host networking, so services running
+  on your Umbrel become reachable from your other devices anywhere in the
+  world. The dashboard wraps the ray CLI: status, networks, invites, firewall
+  rules, file sharing, and everything else ray can do.
+
+
+  Rayfish is experimental, pre-1.0 software. Use it for your homelab and
+  friends, not for anything critical.
+developer: Rayfish
+website: https://github.com/rayfish/rayfish
+submitter: Rayfish
+submission: https://github.com/rayfish/rayfish-umbrel
+repo: https://github.com/rayfish/rayfish
+support: https://github.com/rayfish/rayfish/issues
+gallery: []
+releaseNotes: >-
+  First release of the rayfish Umbrel app.
+dependencies: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
