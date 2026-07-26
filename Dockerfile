@@ -6,7 +6,8 @@ ARG RAY_REF=master
 FROM rust:1-bookworm AS build
 ARG RAY_REPO
 ARG RAY_REF
-RUN git clone --depth 1 --branch "${RAY_REF}" "${RAY_REPO}" /src
+# Full clone + checkout so RAY_REF can be a branch, tag, or commit sha.
+RUN git clone "${RAY_REPO}" /src && git -C /src checkout --detach "${RAY_REF}"
 WORKDIR /src
 RUN cargo build --release --locked
 
