@@ -8,7 +8,7 @@ services:
     # interface and routes, so mesh peers can reach every service on the
     # Umbrel and the Umbrel can reach mesh peers.
     network_mode: "host"
-    image: ghcr.io/rayfish/rayfish-umbrel:master@sha256:9a77c10968f751da494dd3a5e48b52db0f398f0705539e8668c8dbf91c3af6e3
+    image: ghcr.io/rayfish/rayfish-umbrel:v0.5.4@sha256:0eeef0f001dce1aa4f07cb210c9eb3a5a9f93e0e689b5046137034c88f2ea752
     restart: on-failure
     stop_grace_period: 1m
     # Required for the daemon to manage the host TUN interface and routes.
