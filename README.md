@@ -36,11 +36,15 @@ your LAN without authentication. Don't install on a LAN you don't trust.
 ## Building the image
 
 ```bash
-docker build -t rayfish-umbrel --build-arg RAY_REF=master .
+docker build -t rayfish-umbrel --build-arg RAY_REF=v0.5.4 .
 ```
 
-CI: the `docker` workflow (manual dispatch) builds linux/amd64 + linux/arm64
-and pushes `ghcr.io/rayfish/rayfish-umbrel:<ray_ref>`. To pin the compose
+The image packages the published Linux binary, verifies its SHA-256 checksum,
+and includes the bundled fonts' licenses.
+
+CI: the `docker` workflow (manual dispatch) packages linux/amd64 + linux/arm64
+and pushes `ghcr.io/rayfish/rayfish-umbrel:<ray_ref>`. `ray_ref` must be a
+published release tag. To pin the compose
 file, grab the digest after a push:
 
 ```bash

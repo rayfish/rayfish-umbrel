@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       ray_ref:
-        description: rayfish git ref to build (branch, tag, or commit sha); also used as the image tag
+        description: Published Rayfish release tag; also used as the image tag
         required: true
-        default: master
+        default: v0.5.4
 
 permissions:
   contents: read
