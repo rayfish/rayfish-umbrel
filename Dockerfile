@@ -37,6 +37,7 @@ COPY --from=download /download/ray /usr/local/bin/ray
 COPY --from=download /download/licenses/ /usr/share/licenses/rayfish/
 COPY rayfish-vpn/icon.png /usr/local/lib/rayfish/icon.png
 COPY docker/gui-proxy.py /usr/local/lib/rayfish/gui-proxy.py
+COPY docker/gui.html /usr/local/lib/rayfish/gui.html
 COPY docker/start.sh /usr/local/bin/rayfish-start
 RUN chmod +x /usr/local/bin/rayfish-start
 CMD ["rayfish-start"]

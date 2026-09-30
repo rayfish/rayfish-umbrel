@@ -15,6 +15,7 @@ if [ ! -f /etc/rayfish/settings.toml ]; then
     printf 'default_hostname = "umbrel"\n' > /etc/rayfish/settings.toml
     chmod 600 /etc/rayfish/settings.toml
 fi
+mkdir -p /etc/rayfish/downloads
 
 # ray gui binds 127.0.0.1 and mints a random token, printed in its startup
 # URL. Start it, scrape the token, and hand it to the proxy that exposes the

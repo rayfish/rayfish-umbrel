@@ -9,8 +9,12 @@ Delete this shim once ray gui grows --host/--no-token flags.
 """
 
 import http.client
+import json
 import os
+import shutil
+import stat
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import quote, unquote
 
 TOKEN = os.environ["GUI_TOKEN"]
 UPSTREAM_PORT = int(os.environ.get("GUI_UPSTREAM_PORT", "8481"))
@@ -18,6 +22,8 @@ LISTEN_PORT = int(os.environ.get("LISTEN_PORT", "8480"))
 # App icon served at /icon.png for the umbrelOS home screen: its CSP
 # (img-src * blob:) blocks data: URIs, so the manifest points here instead.
 ICON_PATH = os.environ.get("ICON_PATH", "/usr/local/lib/rayfish/icon.png")
+HTML_PATH = os.environ.get("HTML_PATH", "/usr/local/lib/rayfish/gui.html")
+DOWNLOAD_DIR = os.environ.get("DOWNLOAD_DIR", "/etc/rayfish/downloads")
 MAX_BODY = 64 * 1024
 # ray gui kills commands after 300s; outlive that so the error page arrives.
 UPSTREAM_TIMEOUT = 310
@@ -31,6 +37,12 @@ class Proxy(BaseHTTPRequestHandler):
     def _forward(self):
         if self.command == "GET" and self.path == "/icon.png":
             return self._serve_icon()
+        if self.command == "GET" and self.path.partition("?")[0] in ("/", "/index.html"):
+            return self._serve_gui()
+        if self.command == "GET" and self.path == "/downloads":
+            return self._list_downloads()
+        if self.command == "GET" and self.path.startswith("/downloads/"):
+            return self._serve_download()
         length = int(self.headers.get("Content-Length") or 0)
         if length > MAX_BODY:
             self.send_error(413)
@@ -82,6 +94,63 @@ class Proxy(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "public, max-age=86400")
         self.end_headers()
         self.wfile.write(data)
+
+    def _serve_gui(self):
+        try:
+            with open(HTML_PATH, encoding="utf-8") as fh:
+                data = fh.read().replace("__TOKEN__", TOKEN).encode("utf-8")
+        except OSError:
+            self.send_error(503)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _list_downloads(self):
+        try:
+            with os.scandir(DOWNLOAD_DIR) as entries:
+                files = sorted(
+                    (entry.name for entry in entries if entry.is_file(follow_symlinks=False)),
+                    key=str.casefold,
+                )
+        except OSError:
+            files = []
+        data = json.dumps(files).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _serve_download(self):
+        name = unquote(self.path[len("/downloads/"):].partition("?")[0])
+        if not name or name in (".", "..") or "/" in name or "\\" in name or "\x00" in name:
+            self.send_error(404)
+            return
+        try:
+            directory = os.open(DOWNLOAD_DIR, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+            finally:
+                os.close(directory)
+            with os.fdopen(fd, "rb") as fh:
+                size = os.fstat(fh.fileno())
+                if not stat.S_ISREG(size.st_mode):
+                    self.send_error(404)
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("Content-Disposition", "attachment; filename*=UTF-8''" + quote(name))
+                self.send_header("Content-Length", str(size.st_size))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                shutil.copyfileobj(fh, self.wfile)
+        except OSError:
+            self.send_error(404)
 
     do_GET = _forward
     do_POST = _forward

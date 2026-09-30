@@ -22,11 +22,12 @@ One container, modeled on the official Tailscale Umbrel app:
 - `network_mode: host` with `NET_ADMIN`/`NET_RAW` and `/dev/net/tun`, so the
   daemon creates the TUN interface on the host and the whole Umbrel joins the
   mesh.
-- `ray daemon` runs as PID 1. The dashboard is `ray gui`, exposed on port
-  8480 through a small token-injecting proxy (`docker/gui-proxy.py`), since
-  the GUI itself only binds localhost with a per-run token.
+- `ray daemon` runs as PID 1. The dashboard in `docker/gui.html` uses `ray gui`
+  as its command backend, exposed on port 8480 through `docker/gui-proxy.py`.
+  The GUI backend only binds localhost with a per-run token.
 - Identity and network config persist in `${APP_DATA_DIR}/data`
-  (`/etc/rayfish` in the container); logs in `${APP_DATA_DIR}/logs`.
+  (`/etc/rayfish` in the container); logs in `${APP_DATA_DIR}/logs`. Received
+  files are saved under `${APP_DATA_DIR}/data/downloads` and listed in Files.
 - Updates ship as new image digests via app version bumps. `ray update` and
   auto-update are not used inside the container.
 
@@ -43,8 +44,8 @@ The image packages the published Linux binary, verifies its SHA-256 checksum,
 and includes the bundled fonts' licenses.
 
 CI: the `docker` workflow (manual dispatch) packages linux/amd64 + linux/arm64
-and pushes `ghcr.io/rayfish/rayfish-umbrel:<ray_ref>`. `ray_ref` must be a
-published release tag. To pin the compose
+and pushes `ghcr.io/rayfish/rayfish-umbrel:<image_tag>`. `ray_ref` must be a
+published release tag. `image_tag` can also include Umbrel-only changes. To pin the compose
 file, grab the digest after a push:
 
 ```bash

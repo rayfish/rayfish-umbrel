@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       ray_ref:
-        description: Published Rayfish release tag; also used as the image tag
+        description: Published Rayfish release tag
         required: true
         default: v0.5.5
+      image_tag:
+        description: Umbrel image tag
+        required: true
+        default: v0.5.5-umbrel.1
 
 permissions:
   contents: read
@@ -32,5 +36,5 @@ jobs:
           build-args: |
             RAY_REF=${{ inputs.ray_ref }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:${{ inputs.ray_ref }}
+            ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:${{ inputs.image_tag }}
             ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:latest
