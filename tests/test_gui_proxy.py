@@ -17,6 +17,25 @@ proxy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(proxy)
 
 
+class DashboardControlsTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.html = (Path(__file__).resolve().parents[1] / "docker" / "gui.html").read_text(
+            encoding="utf-8"
+        )
+
+    def test_ssh_controls_use_mesh_ssh_commands(self):
+        self.assertIn('["firewall", "ssh", ssh ? "off" : "on"]', self.html)
+        self.assertIn('["firewall", "ssh", "allow", network, peer]', self.html)
+        self.assertIn('["firewall", "ssh", "deny", t.dataset.sshNetwork', self.html)
+        self.assertNotIn('["firewall", "add", "in", "allow", "--proto", "tcp", "--port", "22"', self.html)
+
+    def test_magic_dns_offers_every_mode(self):
+        for mode in ("partial", "off", "on"):
+            self.assertIn(f'<option value="{mode}">', self.html)
+        self.assertIn('["dns", $("dnsMode").value]', self.html)
+
+
 class ProxyRoutesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

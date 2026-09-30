@@ -79,6 +79,7 @@
       color: var(--ink);
       padding: 7px 11px;
     }
+    select.setting-control { width: auto; min-width: 120px; }
     textarea { min-height: 100px; resize: vertical; font-family: var(--mono); }
     input::placeholder { color: var(--faint); }
     label { display: grid; gap: 5px; font-size: 13px; color: var(--muted); }
@@ -422,10 +423,11 @@
         <div class="card settings-card">
           <div class="setting-row">
             <div>
-              <div class="setting-title">SSH to Umbrel</div>
-              <div class="setting-description">Allow a network peer to reach Umbrel's SSH service. Umbrel's normal SSH login still applies.</div>
+              <div class="setting-title">Mesh SSH</div>
+              <div class="setting-description">Sign in to Umbrel through Rayfish without SSH keys or a password.</div>
             </div>
             <span class="spacer"></span>
+            <span id="sshToggle"></span>
             <button id="addSshRule" class="small">Add access rule</button>
           </div>
           <div id="sshRules"></div>
@@ -449,10 +451,14 @@
           <div class="setting-row">
             <div>
               <div class="setting-title">Magic DNS</div>
-              <div class="setting-description">Resolve device names ending in .ray.</div>
+              <div class="setting-description">Partial resolves explicit .ray names. On also resolves bare device names.</div>
             </div>
             <span class="spacer"></span>
-            <span id="dnsToggle"></span>
+            <select id="dnsMode" class="setting-control" aria-label="Magic DNS mode">
+              <option value="partial">Partial</option>
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
           </div>
           <div class="setting-divider"></div>
           <div class="setting-row">
@@ -580,7 +586,7 @@
   <dialog id="sshRuleDlg">
     <form id="sshRuleForm" method="dialog">
       <h3>Allow SSH access</h3>
-      <p class="dlg-note">This opens TCP port 22 on the Rayfish mesh for the selected peer and network. Umbrel's SSH service must be running.</p>
+      <p class="dlg-note">This authorizes the selected Rayfish peer to sign in as any non-root Umbrel account.</p>
       <label>Network<select id="sshNetwork" required></select></label>
       <label>Peer<input id="sshPeer" required placeholder="Peer name or identity" autocomplete="off"></label>
       <div class="dlg-actions"><button type="button" data-close>Cancel</button><button class="primary" type="submit">Allow</button></div>
@@ -882,35 +888,50 @@
       $("vpnState").textContent = active ? "connected" : "standby";
       $("vpnState").className = "badge" + (active ? " good" : "");
 
-      const dns = configEnabled("dns", false) || String(lastConfig?.dns).toLowerCase() === "partial";
+      const dnsMode = ["on", "partial", "off"].includes(String(lastConfig?.dns).toLowerCase())
+        ? String(lastConfig.dns).toLowerCase() : "on";
       const mdns = configEnabled("mdns", data.mdns);
-      $("dnsToggle").innerHTML = settingToggle(dns, ["dns", dns ? "off" : "on"], "Magic DNS", !lastData);
+      const ssh = configEnabled("ssh", false);
+      $("dnsMode").value = dnsMode;
+      $("dnsMode").disabled = !lastData;
+      $("sshToggle").innerHTML = settingToggle(ssh, ["firewall", "ssh", ssh ? "off" : "on"], "Mesh SSH", !lastData);
       $("mdnsToggle").innerHTML = settingToggle(mdns, ["mdns", mdns ? "off" : "on"], "mDNS discovery", !lastData);
     }
 
     async function refreshFirewall() {
-      const res = await call(["firewall", "show"], true);
+      const [res, sshRes] = await Promise.all([
+        call(["firewall", "show"], true),
+        call(["firewall", "ssh", "show"], true),
+      ]);
       if (!res || !res.success) {
         const message = esc((res && (res.stderr || res.stdout) || "Could not read firewall state.").trim());
         $("firewallRules").innerHTML = `<div class="empty">${message}</div>`;
-        $("sshRules").innerHTML = `<div class="empty">${message}</div>`;
-        return;
+      } else {
+        const state = JSON.parse(res.stdout);
+        $("toggleFirewallDefault").textContent = state.default_inbound;
+        $("firewallOutbound").textContent = state.default_outbound;
+        const rules = Array.isArray(state.rules) ? state.rules : [];
+        $("firewallRules").innerHTML = rules.length ? rules.map((rule, index) => `<div class="attn-row">
+          <span class="what"><b>${esc(rule.direction)} ${esc(rule.action)} ${esc(rule.protocol)} ${esc(rule.port)}</b><span class="sub">peer ${esc(rule.peer)} · network ${esc(rule.network)}</span></span>
+          <button class="small danger" data-firewall-remove="${index}">Remove</button>
+        </div>`).join("") : `<div class="setting-description">No firewall rules configured.</div>`;
       }
-      const state = JSON.parse(res.stdout);
-      $("toggleFirewallDefault").textContent = state.default_inbound;
-      $("firewallOutbound").textContent = state.default_outbound;
-      const rules = Array.isArray(state.rules) ? state.rules : [];
-      const sshRules = rules.map((rule, index) => ({rule, index})).filter(({rule}) =>
-        rule.direction === "in" && rule.action === "allow" && rule.protocol === "tcp" && String(rule.port) === "22");
-      $("sshRules").innerHTML = (state.default_inbound === "allow"
-        ? `<div class="setting-description">Inbound default is allow, so other peers may also reach port 22.</div>` : "") + (sshRules.length ? sshRules.map(({rule, index}) => `<div class="attn-row">
-        <span class="what"><b>${esc(rule.peer)}</b><span class="sub">${esc(rule.network)} · TCP 22</span></span>
-        <button class="small danger" data-firewall-remove="${index}">Remove</button>
-      </div>`).join("") : `<div class="setting-description">No SSH-specific allow rules. Other firewall rules may still permit port 22.</div>`);
-      $("firewallRules").innerHTML = rules.length ? rules.map((rule, index) => `<div class="attn-row">
-        <span class="what"><b>${esc(rule.direction)} ${esc(rule.action)} ${esc(rule.protocol)} ${esc(rule.port)}</b><span class="sub">peer ${esc(rule.peer)} · network ${esc(rule.network)}</span></span>
-        <button class="small danger" data-firewall-remove="${index}">Remove</button>
-      </div>`).join("") : `<div class="setting-description">No firewall rules configured.</div>`;
+      if (!sshRes || !sshRes.success) {
+        const message = esc((sshRes && (sshRes.stderr || sshRes.stdout) || "Could not read mesh SSH state.").trim());
+        $("sshRules").innerHTML = `<div class="empty">${message}</div>`;
+      } else {
+        const state = JSON.parse(sshRes.stdout);
+        $("sshToggle").innerHTML = settingToggle(state.enabled, ["firewall", "ssh", state.enabled ? "off" : "on"], "Mesh SSH", false);
+        const rules = (state.networks || []).flatMap(network => (network.allow || []).map(rule => ({
+          network: network.network,
+          peer: rule.peer,
+          users: rule.users || [],
+        })));
+        $("sshRules").innerHTML = rules.length ? rules.map(rule => `<div class="attn-row">
+          <span class="what"><b>${esc(rule.peer)}</b><span class="sub">${esc(rule.network)} · ${esc(rule.users.length ? rule.users.join(", ") : "any non-root account")}</span></span>
+          <button class="small danger" data-ssh-network="${esc(rule.network)}" data-ssh-peer="${esc(rule.peer)}">Remove</button>
+        </div>`).join("") : `<div class="setting-description">No peers have SSH access.</div>`;
+      }
     }
 
     async function refreshFiles() {
@@ -1029,7 +1050,7 @@
 
     // ---- wiring ----
     document.addEventListener("click", ev => {
-      const t = ev.target.closest("[data-copy],[data-leave],[data-invite],[data-rename],[data-act],[data-run],[data-firewall-remove],[data-file-accept],[data-file-reject],[data-file-cancel],[data-close]");
+      const t = ev.target.closest("[data-copy],[data-leave],[data-invite],[data-rename],[data-act],[data-run],[data-firewall-remove],[data-ssh-peer],[data-file-accept],[data-file-reject],[data-file-cancel],[data-close]");
       if (!t) return;
       if (t.dataset.copy != null) {
         if (t.dataset.copy) copyText(t.dataset.copy).then(() => toast("copied"));
@@ -1047,6 +1068,8 @@
         act(JSON.parse(t.dataset.act), t.dataset.ok);
       } else if (t.dataset.firewallRemove != null) {
         act(["firewall", "remove", t.dataset.firewallRemove], "rule removed");
+      } else if (t.dataset.sshPeer != null) {
+        act(["firewall", "ssh", "deny", t.dataset.sshNetwork, t.dataset.sshPeer], "SSH access removed");
       } else if (t.dataset.fileAccept != null) {
         act(["files", "accept", t.dataset.fileAccept, "--output", "/etc/rayfish/downloads"], "file saved to Umbrel");
       } else if (t.dataset.fileReject != null) {
@@ -1093,6 +1116,7 @@
     $("refreshMachines").onclick = () => refresh();
     $("refreshFirewall").onclick = () => refreshFirewall();
     $("refreshFiles").onclick = () => refreshFiles();
+    $("dnsMode").addEventListener("change", () => act(["dns", $("dnsMode").value], "Magic DNS updated"));
     $("addFirewallRule").onclick = () => $("firewallRuleDlg").showModal();
     $("addSshRule").onclick = () => {
       const networks = lastData?.networks || [];
@@ -1108,8 +1132,7 @@
       const network = $("sshNetwork").value;
       const peer = $("sshPeer").value.trim();
       if (!network || !peer) return ev.preventDefault();
-      act(["firewall", "add", "in", "allow", "--proto", "tcp", "--port", "22",
-        "--peer", peer, "--network", network], "SSH access allowed");
+      act(["firewall", "ssh", "allow", network, peer], "SSH access allowed");
     });
     $("firewallRuleForm").addEventListener("submit", ev => {
       ev.preventDefault();
