@@ -1,5 +1,5 @@
 # Package a published release with the Umbrel GUI proxy and daemon entrypoint.
-ARG RAY_REF=v0.5.4
+ARG RAY_REF=v0.5.5
 
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS download
 ARG RAY_REF

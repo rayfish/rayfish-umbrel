@@ -6,7 +6,7 @@ on:
       ray_ref:
         description: Published Rayfish release tag; also used as the image tag
         required: true
-        default: v0.5.4
+        default: v0.5.5
 
 permissions:
   contents: read

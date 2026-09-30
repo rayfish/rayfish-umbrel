@@ -36,7 +36,7 @@ your LAN without authentication. Don't install on a LAN you don't trust.
 ## Building the image
 
 ```bash
-docker build -t rayfish-umbrel --build-arg RAY_REF=v0.5.4 .
+docker build -t rayfish-umbrel --build-arg RAY_REF=v0.5.5 .
 ```
 
 The image packages the published Linux binary, verifies its SHA-256 checksum,
