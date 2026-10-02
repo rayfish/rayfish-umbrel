@@ -2,9 +2,9 @@ manifestVersion: 1
 id: rayfish-vpn
 name: Rayfish
 tagline: Your machines, on one private network, anywhere
-icon: http://umbrel.local:8480/icon.png
+icon: https://raw.githubusercontent.com/rayfish/rayfish-umbrel/master/rayfish-vpn/icon.png
 category: networking
-version: "0.1.4"
+version: "0.1.5"
 port: 8480
 description: >-
   Rayfish is a peer-to-peer mesh VPN that puts your Umbrel, laptop, phone, and
@@ -35,8 +35,7 @@ repo: https://github.com/rayfish/rayfish
 support: https://github.com/rayfish/rayfish/issues
 gallery: []
 releaseNotes: >-
-  Updates Rayfish to v0.5.6 with bounded mesh dials and more reliable SSH
-  host key reuse.
+  Fixes the app icon on Umbrel dashboards.
 dependencies: []
 path: ""
 defaultUsername: ""
