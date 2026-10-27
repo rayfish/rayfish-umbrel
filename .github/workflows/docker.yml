@@ -6,11 +6,11 @@ on:
       ray_ref:
         description: Published Rayfish release tag
         required: true
-        default: v0.5.10
+        default: v0.5.11
       image_tag:
         description: Umbrel image tag
         required: true
-        default: v0.5.10-umbrel.1
+        default: v0.5.11-umbrel.1
 
 permissions:
   contents: read
