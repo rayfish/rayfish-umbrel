@@ -4,7 +4,7 @@ name: Rayfish
 tagline: Your machines, on one private network, anywhere
 icon: https://raw.githubusercontent.com/rayfish/rayfish-umbrel/master/rayfish-vpn/icon.png
 category: networking
-version: "0.1.6"
+version: "0.5.10"
 port: 8480
 description: >-
   Rayfish is a peer-to-peer mesh VPN that puts your Umbrel, laptop, phone, and

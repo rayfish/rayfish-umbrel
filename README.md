@@ -53,5 +53,6 @@ docker buildx imagetools inspect ghcr.io/rayfish/rayfish-umbrel:<version>
 ```
 
 then set `image: ghcr.io/rayfish/rayfish-umbrel:<version>@sha256:<digest>` in
-`rayfish-vpn/docker-compose.yml` and bump `version` in
-`rayfish-vpn/umbrel-app.yml`.
+`rayfish-vpn/docker-compose.yml` and set `version` in
+`rayfish-vpn/umbrel-app.yml` to the Rayfish release it packages, so the
+version umbrelOS shows is the Rayfish version.
