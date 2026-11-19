@@ -1,6 +1,11 @@
 name: docker
 
+# Push a tag such as v0.5.17-umbrel.1 to build that image from the Rayfish
+# release v0.5.17, or run it by hand with both values.
 on:
+  push:
+    tags:
+      - "v*-umbrel.*"
   workflow_dispatch:
     inputs:
       ray_ref:
@@ -20,6 +25,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+          INPUT_RAY_REF: ${{ inputs.ray_ref }}
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          if [ "$EVENT" = push ]; then
+            image_tag="$TAG"
+            ray_ref="${TAG%-umbrel.*}"
+          else
+            image_tag="$INPUT_IMAGE_TAG"
+            ray_ref="$INPUT_RAY_REF"
+          fi
+          echo "ray_ref=$ray_ref" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -28,13 +49,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            RAY_REF=${{ inputs.ray_ref }}
+            RAY_REF=${{ steps.version.outputs.ray_ref }}
           tags: |
-            ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:${{ inputs.image_tag }}
+            ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:${{ steps.version.outputs.image_tag }}
             ghcr.io/${{ github.repository_owner }}/rayfish-umbrel:latest
+      - name: Image for docker-compose.yml
+        env:
+          IMAGE_TAG: ${{ steps.version.outputs.image_tag }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "ghcr.io/$OWNER/rayfish-umbrel:$IMAGE_TAG@$DIGEST" >> "$GITHUB_STEP_SUMMARY"

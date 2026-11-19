@@ -43,10 +43,12 @@ docker build -t rayfish-umbrel --build-arg RAY_REF=v0.5.17 .
 The image packages the published Linux binary, verifies its SHA-256 checksum,
 and includes the bundled fonts' licenses.
 
-CI: the `docker` workflow (manual dispatch) packages linux/amd64 + linux/arm64
-and pushes `ghcr.io/rayfish/rayfish-umbrel:<image_tag>`. `ray_ref` must be a
-published release tag. `image_tag` can also include Umbrel-only changes. To pin the compose
-file, grab the digest after a push:
+CI: pushing a tag such as `v0.5.17-umbrel.1` runs the `docker` workflow, which
+packages the Rayfish release `v0.5.17` for linux/amd64 + linux/arm64 and pushes
+`ghcr.io/rayfish/rayfish-umbrel:v0.5.17-umbrel.1`. The release must be
+published first. Bump the `-umbrel.N` suffix for Umbrel-only changes. The
+workflow can also be run by hand with `ray_ref` and `image_tag`. The run
+summary shows the pinned image; to look it up later:
 
 ```bash
 docker buildx imagetools inspect ghcr.io/rayfish/rayfish-umbrel:<version>
