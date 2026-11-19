@@ -4,7 +4,7 @@ name: Rayfish
 tagline: Your machines, on one private network, anywhere
 icon: https://raw.githubusercontent.com/rayfish/rayfish-umbrel/master/rayfish-vpn/icon.png
 category: networking
-version: "0.5.11"
+version: "0.5.17"
 port: 8480
 description: >-
   Rayfish is a peer-to-peer mesh VPN that puts your Umbrel, laptop, phone, and
@@ -35,9 +35,9 @@ repo: https://github.com/rayfish/rayfish
 support: https://github.com/rayfish/rayfish/issues
 gallery: []
 releaseNotes: >-
-  Updates Rayfish to 0.5.11: fixes mesh SSH privilege escalation through
-  socket and agent forwarding, restores connections after stale peer addresses,
-  preserves DNS on IPv6-only hosts, and makes unpairing reliable across restarts.
+  Updates Rayfish to 0.5.17: devices on Wi-Fi that rewrites DNS answers now
+  join the mesh, interrupted file downloads resume by themselves, large
+  transfers stall less, and SSH keeps command exit statuses.
 dependencies: []
 path: ""
 defaultUsername: ""
